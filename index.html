@@ -919,16 +919,6 @@ function validateLikertRound(prefix, count){
     }
   }
 
-  if(prefix==='sat' && r===3){
-    if(expData['r3_sat7_attention'] !== '7'){
-      alert('注意力检测题未通过，请仔细阅读题目要求后重新作答。');
-      var sat7radios = document.querySelectorAll('input[name="sat7"]');
-      sat7radios.forEach(function(radio){radio.checked=false;});
-      expData['r3_sat7_attention'] = '';
-      return;
-    }
-  }
-
   if(prefix==='anx') goToMeasureStep('presence');
   else if(prefix==='sp') goToMeasureStep('prompt');
   else if(prefix==='pa') goToMeasureStep('satisfaction');
