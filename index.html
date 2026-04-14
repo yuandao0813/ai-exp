@@ -319,9 +319,13 @@ input[type="number"],input[type="tel"]{width:100%;max-width:280px;padding:8px 12
     <p>本研究的真实目的是探究生成式AI交互过程中，不同等待提示方式对用户体验的影响。</p>
     <p>您的数据已记录完毕。请点击下方按钮下载实验数据文件。</p>
     <div class="btn-center" style="margin-top:24px">
-      <button class="btn" onclick="downloadData()">下载数据 (CSV)</button>
-    </div>
-    <p style="margin-top:20px;font-size:13px;color:#aaa">如有任何疑问，请联系研究者（yuandao0813@163.com）。再次感谢您的宝贵时间！</p>
+  <button class="btn" onclick="downloadData()">下载数据 (CSV备份)</button>
+</div>
+<div class="btn-center" style="margin-top:12px">
+  <button class="btn" onclick="goBackToCredamo()" style="background:#28a745">返回问卷继续</button>
+</div>
+<p style="margin-top:20px;font-size:13px;color:#aaa">如有任何疑问，请联系研究者（yuandao0813@163.com）。再次感谢您的宝贵时间！</p>
+
   </div>
 </div>
 
@@ -526,9 +530,14 @@ var expData = {
 
 // ==================== 初始化 ====================
 (function(){
+  var params = new URLSearchParams(window.location.search);
+  var sessionId = params.get('SESSION_ID') || '';
+
   var ts = Date.now().toString(36);
   var rnd = Math.random().toString(36).substring(2,7);
-  expData.pid = 'P_'+ts+'_'+rnd;
+  expData.pid = sessionId || ('P_'+ts+'_'+rnd);
+  expData.credamo_session_id = sessionId;
+
   expData.ts_start = new Date().toISOString();
   group = GROUPS[Math.floor(Math.random()*GROUPS.length)];
   expData.group = group;
@@ -540,6 +549,7 @@ var expData = {
 
   buildSAMTables();
   buildLikertTables();
+
 })();
 
 // ==================== Textarea自动调整高度 ====================
@@ -968,13 +978,41 @@ function validateDemo(){
 }
 
 // ==================== 实验结束 ====================
+var SERVER_URL = 'https://script.google.com/macros/s/AKfycby5hPNV5KC3PvCdYDcE7PsFGP6sGHf5-8PdGUS94WNYpaKPxx6sGVlLxjPHSFqkQcML
+/exec';
+
 function finishExperiment(){
   expData.phone = document.getElementById('phone').value.trim();
   expData.ts_end = new Date().toISOString();
   expData.total_duration_ms = Date.now() - new Date(expData.ts_start).getTime();
+
   showCard('sec-debrief');
   document.getElementById('progressFill').style.width = '100%';
+
+  submitToServer(expData);
 }
+
+function submitToServer(data){
+  fetch(SERVER_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(){
+    console.log('数据已提交到服务器');
+  }).catch(function(err){
+    console.error('提交失败:', err);
+  });
+}
+
+function goBackToCredamo(){
+  var completeUrl = 'https://credamo.com/survey/complete';
+  if(expData.credamo_session_id){
+    completeUrl += '?SESSION_ID=' + encodeURIComponent(expData.credamo_session_id);
+  }
+  window.location.href = completeUrl;
+}
+
 
 // ==================== 数据下载 ====================
 function downloadData(){
