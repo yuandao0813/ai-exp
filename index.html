@@ -974,7 +974,23 @@ function finishExperiment(){
   expData.total_duration_ms = Date.now() - new Date(expData.ts_start).getTime();
   showCard('sec-debrief');
   document.getElementById('progressFill').style.width = '100%';
+  submitToServer(expData);
 }
+
+function submitToServer(data){
+  var url = 'https://script.google.com/macros/s/AKfycby5hPNV5KC3PvCdYDcE7PsFGP6sGHf5-8PdGUS94WNYpaKPxx6sGVlLxjPHSFqkQcML/exec';
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(function(){
+    console.log('数据已提交到Google Sheets');
+  }).catch(function(err){
+    console.error('提交失败:', err);
+  });
+}
+
 
 // ==================== 数据下载 ====================
 function downloadData(){
