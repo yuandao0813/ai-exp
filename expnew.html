@@ -619,23 +619,31 @@ function buildSatTable(round){
   satH+='</tr></thead>';
   var satB='<tbody>';
 
-  if(round===3){
+if(round===3){
+    // 合并所有题目，注意力检测题作为第4题
     var allItems = [
-      SAT_ITEMS[0],
-      SAT_ITEMS[1],
-      SAT_ITEMS[2],
-      '4. ' + ATTENTION_ITEM,
-      SAT_ITEMS[3],
-      SAT_ITEMS[4],
-      SAT_ITEMS[5]
+      SAT_ITEMS[0], // sat1
+      SAT_ITEMS[1], // sat2
+      SAT_ITEMS[2], // sat3
+      '4. ' + ATTENTION_ITEM, // sat4 (注意力检测题)
+      SAT_ITEMS[3], // sat5 (原总体满意度)
+      SAT_ITEMS[4], // sat6
+      SAT_ITEMS[5]  // sat7
     ];
-    var nameMap = ['sat1','sat2','sat3','sat7','sat4','sat5','sat6'];
-
+    // 移除 nameMap，直接使用 sat1 到 sat7
     allItems.forEach(function(item, idx){
       satB+='<tr><td>'+item+'</td>';
+      // 使用 idx+1 生成 name: sat1, sat2, ..., sat7
       for(var v=1;v<=7;v++){
-        satB+='<td><input type="radio" name="'+nameMap[idx]+'" value="'+v+'"></td>';
+        satB+='<td><input type="radio" name="sat'+(idx+1)+'" value="'+v+'"></td>';
       }
+      satB+='</tr>';
+    });
+  } else {
+    // 非第三轮的逻辑不变
+    SAT_ITEMS.forEach(function(item,idx){
+      satB+='<tr><td>'+item+'</td>';
+      for(var v=1;v<=7;v++) satB+='<td><input type="radio" name="sat'+(idx+1)+'" value="'+v+'"></td>';
       satB+='</tr>';
     });
   } else {
@@ -899,24 +907,16 @@ function validateSAM(){
 function validateLikertRound(prefix, count){
   var r = currentRound;
   for(var i=1;i<=count;i++){
+    // 统一使用 prefix+i 作为 name，例如 ‘sat1’, ‘sat2’, …, ‘sat7’
     var name = prefix+i;
-    if(prefix==='sat' && r===3 && i===4){
-      name = 'sat7';
-    }
     var checked = document.querySelector('input[name="'+name+'"]:checked');
     if(!checked){
-      if(prefix==='sat' && r===3 && i===4){
-        alert('请完成注意力检测题（第4题）');
-      } else {
-        alert('请完成所有题目的作答（第'+i+'题未答）');
-      }
+      // 统一提示，不再区分是否为注意力检测题
+      alert('请完成所有题目的作答（第'+i+'题未答）');
       return;
     }
-    if(prefix==='sat' && r===3 && i===4){
-      expData['r'+r+'_sat7_attention'] = checked.value;
-    } else {
-      expData['r'+r+'_'+name] = checked.value;
-    }
+    // 统一保存数据，注意力检测题保存到 r3_sat4
+    expData['r'+r+'_'+name] = checked.value;
   }
 
   if(prefix==='anx') goToMeasureStep('presence');
@@ -967,19 +967,25 @@ function finishExperiment(){
   submitToServer(expData);
 }
 
+// 修改 submitToServer 函数
 function submitToServer(data){
-  var url = 'https://script.google.com/macros/s/AKfycby5hPNV5KC3PvCdYDcE7PsFGP6sGHf5-8PdGUS94WNYpaKPxx6sGVlLxjPHSFqkQcML/exec';
+  // 替换为您的腾讯云函数HTTP触发器地址
+  var url = 'https://您的云函数ID.地区.myqcloud.com/release/您的函数路径';
   fetch(url, {
     method: 'POST',
-    mode: 'no-cors',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify(data)
-  }).then(function(){
-    console.log('数据已提交到Google Sheets');
+  }).then(function(response){
+    if(response.ok){
+      console.log('数据已成功提交到腾讯云函数');
+    } else {
+      console.error('提交失败，状态码:', response.status);
+    }
   }).catch(function(err){
-    console.error('提交失败:', err);
+    console.error('提交请求错误:', err);
   });
 }
+
 
 
 // ==================== 数据下载 ====================
